@@ -1,0 +1,12 @@
+osmnx>=1.9.0
+networkx>=3.1
+geopandas>=0.14
+shapely>=2.0
+pandas>=2.0
+numpy>=1.24
+matplotlib>=3.7
+requests>=2.31
+python-dotenv>=1.0
+tqdm>=4.66
+scipy>=1.11
+jupyter>=1.0

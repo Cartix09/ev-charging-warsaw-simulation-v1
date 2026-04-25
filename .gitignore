@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Generated artefacts (kept out of git; reproduced by running the notebooks)
+ev_thesis/data/processed/
+ev_thesis/data/raw/chargers_*.csv
+ev_thesis/outputs/figures/*.png
+ev_thesis/outputs/tables/*.csv

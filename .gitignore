@@ -16,3 +16,6 @@ ev_thesis/data/processed/
 ev_thesis/data/raw/chargers_*.csv
 ev_thesis/outputs/figures/*.png
 ev_thesis/outputs/tables/*.csv
+
+# Workspace export archive (used to ship the project off-sandbox)
+ev-charging-warsaw-simulation-v1.zip

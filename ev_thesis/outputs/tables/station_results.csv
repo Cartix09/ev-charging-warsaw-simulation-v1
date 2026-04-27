@@ -1,0 +1,49 @@
+station_id,node,name,operator,n_ports,latitude,longitude,source,ports_imputed,total_arrivals,total_started,total_completed,total_charging_minutes,total_queue_minutes,mean_queue,max_queue,utilisation,scenario
+51346,32528278,Budynek RWE - Wybrzeże Kościuszkowskie 41,(unknown),4,52.239246,21.030837,openchargemap,False,10,10,10,262,7,0.009722222222222222,1,0.09097222222222222,S1_real
+175522,33629032,IBIS Hotel Zagórna,(unknown),1,52.22632306434696,21.042567687878773,openchargemap,False,10,10,10,261,49,0.06805555555555555,1,0.3625,S1_real
+149503,33692336,Warsaw Supercharger,(unknown),2,52.207735545952005,21.02934911918203,openchargemap,False,4,4,4,108,0,0.0,0,0.075,S1_real
+57210,60861687,Grupa PKP Energetyka,(unknown),2,52.2246863279907,21.0073869814142,openchargemap,False,1,1,1,24,0,0.0,0,0.016666666666666666,S1_real
+87389,105757858,H15 Boutique Hotel,(unknown),1,52.225119,21.011656,openchargemap,False,16,16,16,413,470,0.6527777777777778,4,0.5736111111111111,S1_real
+51342,105757863,Piękna 44,(unknown),1,52.223168,21.013634,openchargemap,False,20,20,20,528,1449,2.0125,7,0.7333333333333333,S1_real
+295782,224760596,GreenWay Elektrownia Powiśle,(unknown),2,52.24100112411344,21.02608377344086,openchargemap,False,9,9,9,235,11,0.015277777777777777,1,0.16319444444444445,S1_real
+193148,255304625,Sheraton Grand Warsaw,(unknown),2,52.228205771227664,21.025678355454147,openchargemap,False,34,34,33,858,1691,2.348611111111111,12,0.5958333333333333,S1_real
+97485,450852379,Radisson Blu Centrum Hotel Warsaw,(unknown),1,52.236653,20.99871,openchargemap,False,0,0,0,0,0,0.0,0,0.0,S1_real
+127867,1317157320,The Westin Warsaw | The Westin Warsaw Hotel Parking,(unknown),4,52.23533366383875,20.9964426554878,openchargemap,False,0,0,0,0,0,0.0,0,0.0,S1_real
+51348,2460257614,Plac Teatralny,(unknown),1,52.244215,21.010513,openchargemap,False,37,27,26,719,10367,14.39861111111111,22,0.9986111111111111,S1_real
+51347,3205429418,Centrum Nauki  Kopernik - Wybrzeże Kościuszkowskie 20,(unknown),1,52.2416876131635,21.0278360600147,openchargemap,False,47,28,27,697,8135,11.29861111111111,19,0.9680555555555556,S1_real
+51344,3416722254,Emilii Plater,(unknown),1,52.231945,21.003838,openchargemap,False,0,0,0,0,0,0.0,0,0.0,S1_real
+51343,3818807470,Plac Defilad 1,(unknown),1,52.230524,21.007401,openchargemap,False,1,1,1,25,0,0.0,0,0.034722222222222224,S1_real
+85458,4422437249,Apartamenty Cosmopolitan,(unknown),2,52.235546,21.001557,openchargemap,False,21,21,21,558,310,0.4305555555555556,4,0.3875,S1_real
+75065,13094988928,CH Arkadia,(unknown),1,52.2573732,20.9845828,openchargemap,False,23,23,23,629,3048,4.233333333333333,12,0.8736111111111111,S1_real
+10000,105757842,synthetic_clustered_000,(synthetic),2,52.2266587,21.0111,synthetic_clustered,False,23,23,23,604,317,0.44027777777777777,5,0.41944444444444445,S2_clustered
+10001,32572230,synthetic_clustered_001,(synthetic),2,52.2296943,21.0122579,synthetic_clustered,False,1,1,1,24,0,0.0,0,0.016666666666666666,S2_clustered
+10002,32572231,synthetic_clustered_002,(synthetic),2,52.2295269,21.0115084,synthetic_clustered,False,5,5,5,127,0,0.0,0,0.08819444444444445,S2_clustered
+10003,560634871,synthetic_clustered_003,(synthetic),2,52.2277792,21.0171532,synthetic_clustered,False,22,22,22,582,688,0.9555555555555556,8,0.4041666666666667,S2_clustered
+10004,248564709,synthetic_clustered_004,(synthetic),2,52.2273457,21.0148359,synthetic_clustered,False,0,0,0,0,0,0.0,0,0.0,S2_clustered
+10005,105757899,synthetic_clustered_005,(synthetic),2,52.2278962,21.0127232,synthetic_clustered,False,0,0,0,0,0,0.0,0,0.0,S2_clustered
+10006,8388750740,synthetic_clustered_006,(synthetic),2,52.230595,21.0114476,synthetic_clustered,False,0,0,0,0,0,0.0,0,0.0,S2_clustered
+10007,3818807470,synthetic_clustered_007,(synthetic),2,52.2289108,21.0077759,synthetic_clustered,False,2,2,2,49,0,0.0,0,0.034027777777777775,S2_clustered
+10008,6439949857,synthetic_clustered_008,(synthetic),2,52.2309191,21.0163856,synthetic_clustered,False,36,36,35,905,1142,1.586111111111111,9,0.6284722222222222,S2_clustered
+10009,3694443469,synthetic_clustered_009,(synthetic),2,52.2281945,21.012554,synthetic_clustered,False,1,1,1,24,0,0.0,0,0.016666666666666666,S2_clustered
+10010,105757851,synthetic_clustered_010,(synthetic),2,52.2292919,21.0095932,synthetic_clustered,False,1,1,1,25,0,0.0,0,0.017361111111111112,S2_clustered
+10011,6282863138,synthetic_clustered_011,(synthetic),1,52.2331598,21.0126715,synthetic_clustered,False,65,27,26,718,25443,35.3375,44,0.9972222222222222,S2_clustered
+10012,255152633,synthetic_clustered_012,(synthetic),1,52.2330532,21.0137738,synthetic_clustered,False,73,28,27,717,23804,33.06111111111111,47,0.9958333333333333,S2_clustered
+10013,9891756273,synthetic_clustered_013,(synthetic),1,52.2325182,21.015695,synthetic_clustered,False,0,0,0,0,0,0.0,0,0.0,S2_clustered
+10014,246806033,synthetic_clustered_014,(synthetic),1,52.2288124,21.0173665,synthetic_clustered,False,0,0,0,0,0,0.0,0,0.0,S2_clustered
+10015,32629354,synthetic_clustered_015,(synthetic),1,52.228908,21.0124676,synthetic_clustered,False,3,3,3,80,0,0.0,0,0.1111111111111111,S2_clustered
+10000,4402507535,synthetic_distributed_000,(synthetic),2,52.2221397,21.0193979,synthetic_distributed,False,30,30,30,784,1145,1.5902777777777777,9,0.5444444444444444,S3_distributed
+10001,32528269,synthetic_distributed_001,(synthetic),2,52.237234,21.0194193,synthetic_distributed,False,13,13,13,338,107,0.1486111111111111,3,0.23472222222222222,S3_distributed
+10002,4908166135,synthetic_distributed_002,(synthetic),2,52.2219147,21.0286819,synthetic_distributed,False,2,2,2,53,0,0.0,0,0.03680555555555556,S3_distributed
+10003,31158725,synthetic_distributed_003,(synthetic),2,52.2449828,21.0005122,synthetic_distributed,False,23,23,23,591,298,0.41388888888888886,4,0.41041666666666665,S3_distributed
+10004,212881000,synthetic_distributed_004,(synthetic),2,52.2447495,20.9913335,synthetic_distributed,False,6,6,6,157,49,0.06805555555555555,2,0.10902777777777778,S3_distributed
+10005,105757851,synthetic_distributed_005,(synthetic),2,52.2292919,21.0095932,synthetic_distributed,False,2,2,2,50,0,0.0,0,0.034722222222222224,S3_distributed
+10006,33629023,synthetic_distributed_006,(synthetic),2,52.2217669,21.0373536,synthetic_distributed,False,9,9,9,232,12,0.016666666666666666,2,0.16111111111111112,S3_distributed
+10007,248200300,synthetic_distributed_007,(synthetic),2,52.2377026,21.0095295,synthetic_distributed,False,18,18,18,476,172,0.2388888888888889,3,0.33055555555555555,S3_distributed
+10008,2460257614,synthetic_distributed_008,(synthetic),2,52.2443131,21.0096663,synthetic_distributed,False,5,5,5,137,6,0.008333333333333333,1,0.09513888888888888,S3_distributed
+10009,33213308,synthetic_distributed_009,(synthetic),2,52.2149085,21.0196232,synthetic_distributed,False,6,6,6,163,0,0.0,0,0.11319444444444444,S3_distributed
+10010,282141419,synthetic_distributed_010,(synthetic),2,52.252725,21.0009389,synthetic_distributed,False,27,27,27,731,1285,1.7847222222222223,10,0.5076388888888889,S3_distributed
+10011,1569797352,synthetic_distributed_011,(synthetic),1,52.2301952,21.0005421,synthetic_distributed,False,0,0,0,0,0,0.0,0,0.0,S3_distributed
+10012,32591829,synthetic_distributed_012,(synthetic),1,52.2224436,21.0088107,synthetic_distributed,False,3,3,3,75,15,0.020833333333333332,1,0.10416666666666667,S3_distributed
+10013,248564706,synthetic_distributed_013,(synthetic),1,52.2303392,21.0195008,synthetic_distributed,False,28,28,27,708,3679,5.1097222222222225,12,0.9833333333333333,S3_distributed
+10014,224818803,synthetic_distributed_014,(synthetic),1,52.2451591,21.0180331,synthetic_distributed,False,13,13,13,338,429,0.5958333333333333,3,0.46944444444444444,S3_distributed
+10015,6506160160,synthetic_distributed_015,(synthetic),1,52.2378825,21.0275126,synthetic_distributed,False,46,27,26,677,8283,11.504166666666666,20,0.9402777777777778,S3_distributed

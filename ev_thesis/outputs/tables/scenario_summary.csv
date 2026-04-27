@@ -1,0 +1,4 @@
+scenario,n_agents,n_stations,total_ports,completed_trips,failed_trips,stranded_agents,started_charging_events,completed_charging_events,total_queued_agents,pct_charged_at_least_once,pct_waited_at_least_once,mean_waiting_time_min,max_waiting_time_min,median_waiting_time_min,p95_waiting_time_min,mean_waiting_time_among_waiters_min,mean_detour_distance_m,median_detour_distance_m,mean_station_utilisation,total_queue_minutes,max_queue_length
+S1_real,500,16,27,1362,0,21,204,201,139,39.4,27.800000000000004,38.932,545.0,0.0,277.2999999999997,140.0431654676259,538.3055334791296,0.0,0.3671006944444445,25537,22
+S2_clustered,500,16,27,1216,0,19,149,146,100,28.599999999999998,20.0,35.384,610.0,0.0,293.0,176.92,911.9562630034887,0.0,0.23307291666666669,51394,47
+S3_distributed,500,16,27,1396,0,20,212,210,126,40.8,25.2,24.996,425.0,0.0,171.5499999999995,99.19047619047619,431.80649484387595,0.0,0.31718749999999996,15480,20

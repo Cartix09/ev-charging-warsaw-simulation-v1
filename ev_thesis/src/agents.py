@@ -68,7 +68,12 @@ class EVAgent:
     waiting_time_min: float = 0.0
     detour_distance_m: float = 0.0
     completed_trips: int = 0
-    charging_events: int = 0
+    # Charging events split: starts (port allocated to this agent) vs.
+    # completions (charging session reached target SoC). They differ when
+    # the simulation horizon ends mid-session.
+    started_charging_events: int = 0
+    completed_charging_events: int = 0
+    times_queued: int = 0       # number of times this agent joined a queue
     failed_trips: int = 0       # destination unreachable, etc.
     stranded: bool = False      # ran out of battery with no reachable charger
 
@@ -183,12 +188,14 @@ class EVAgent:
     def join_queue(self, current_minute: int) -> None:
         self.state = AgentState.QUEUEING
         self.queued_at_minute = current_minute
+        self.times_queued += 1
 
     def start_charging(self, current_minute: int) -> None:
         if self.queued_at_minute is not None:
             self.waiting_time_min += current_minute - self.queued_at_minute
             self.queued_at_minute = None
         self.charging_started_minute = current_minute
+        self.started_charging_events += 1
         self.state = AgentState.CHARGING
 
     def step_charge(self, dt_min: float, charger_power_kw: float) -> bool:
@@ -199,7 +206,7 @@ class EVAgent:
 
     def finish_charging(self, G: nx.MultiDiGraph) -> bool:
         """After charging, resume the original destination route."""
-        self.charging_events += 1
+        self.completed_charging_events += 1
         self.charging_started_minute = None
         self.current_station_node = None
         if self.pending_destination is None:

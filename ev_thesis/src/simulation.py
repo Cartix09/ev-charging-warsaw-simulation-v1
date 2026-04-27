@@ -164,7 +164,9 @@ class Simulator:
                     "agent_id": a.agent_id,
                     "completed_trips": a.completed_trips,
                     "failed_trips": a.failed_trips,
-                    "charging_events": a.charging_events,
+                    "started_charging_events": a.started_charging_events,
+                    "completed_charging_events": a.completed_charging_events,
+                    "times_queued": a.times_queued,
                     "waiting_time_min": a.waiting_time_min,
                     "detour_distance_m": a.detour_distance_m,
                     "final_soc": a.soc,
@@ -203,21 +205,47 @@ class Simulator:
             return {}
         wait = agents_df["waiting_time_min"]
         det = agents_df["detour_distance_m"]
+        n = len(agents_df)
+        charged_at_least_once = agents_df["started_charging_events"] > 0
+        waited_at_least_once = wait > 0
+        wait_among_waiters = wait[waited_at_least_once]
+
         return {
             "scenario": self.scenario_name,
-            "n_agents": len(agents_df),
+            "n_agents": n,
             "n_stations": len(stations_df),
             "total_ports": int(stations_df["n_ports"].sum()) if not stations_df.empty else 0,
             "completed_trips": int(agents_df["completed_trips"].sum()),
             "failed_trips": int(agents_df["failed_trips"].sum()),
             "stranded_agents": int(agents_df["stranded"].sum()),
-            "charging_events": int(agents_df["charging_events"].sum()),
+            # Started vs completed are now distinct.
+            "started_charging_events": int(agents_df["started_charging_events"].sum()),
+            "completed_charging_events": int(agents_df["completed_charging_events"].sum()),
+            "total_queued_agents": int(waited_at_least_once.sum()),
+            "pct_charged_at_least_once": float(charged_at_least_once.mean() * 100),
+            "pct_waited_at_least_once": float(waited_at_least_once.mean() * 100),
             "mean_waiting_time_min": float(wait.mean()),
             "max_waiting_time_min": float(wait.max()),
+            "median_waiting_time_min": float(wait.median()),
+            "p95_waiting_time_min": float(wait.quantile(0.95)),
+            "mean_waiting_time_among_waiters_min": (
+                float(wait_among_waiters.mean()) if len(wait_among_waiters) else 0.0
+            ),
             "mean_detour_distance_m": float(det.mean()),
+            "median_detour_distance_m": float(det.median()),
             "mean_station_utilisation": (
                 float(stations_df["utilisation"].mean())
                 if not stations_df.empty
                 else 0.0
+            ),
+            "total_queue_minutes": (
+                int(stations_df["total_queue_minutes"].sum())
+                if not stations_df.empty
+                else 0
+            ),
+            "max_queue_length": (
+                int(stations_df["max_queue"].max())
+                if not stations_df.empty
+                else 0
             ),
         }

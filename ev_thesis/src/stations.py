@@ -39,6 +39,8 @@ class ChargingStation:
     # Counters.
     total_arrivals: int = 0
     total_charging_minutes: int = 0
+    total_started: int = 0
+    total_completed: int = 0
 
     @property
     def has_free_port(self) -> bool:
@@ -49,6 +51,7 @@ class ChargingStation:
         self.total_arrivals += 1
         if self.has_free_port:
             self.occupied_ports += 1
+            self.total_started += 1
             return True
         self.queue.append(agent_id)
         return False
@@ -60,8 +63,10 @@ class ChargingStation:
         """
         if self.occupied_ports > 0:
             self.occupied_ports -= 1
+            self.total_completed += 1
         if self.queue:
             self.occupied_ports += 1
+            self.total_started += 1
             return self.queue.popleft()
         return None
 
@@ -92,7 +97,10 @@ class ChargingStation:
             "source": self.source,
             "ports_imputed": self.ports_imputed,
             "total_arrivals": self.total_arrivals,
+            "total_started": self.total_started,
+            "total_completed": self.total_completed,
             "total_charging_minutes": self.total_charging_minutes,
+            "total_queue_minutes": int(sum(self.queue_log)),
             "mean_queue": (
                 sum(self.queue_log) / len(self.queue_log) if self.queue_log else 0.0
             ),

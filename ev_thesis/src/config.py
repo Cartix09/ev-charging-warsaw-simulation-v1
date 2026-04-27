@@ -107,30 +107,36 @@ class SimulationParams:
     seed: int = 42
     # Discrete time step: 1 minute per tick.
     dt_minutes: int = 1
-    # Simulated horizon. 6 hours covers a meaningful peak; expand for a full
-    # day when running longer experiments.
-    horizon_minutes: int = 6 * 60
+    # Simulated horizon. 12 hours covers morning + afternoon peaks and gives
+    # enough time for slow AC charging cycles to complete. Bump to 1440 for a
+    # full simulated day.
+    horizon_minutes: int = 12 * 60
 
     # Agent population (kept identical across scenarios).
-    n_agents: int = 200
-    # Number of trips each agent attempts during the horizon.
-    trips_per_agent: Tuple[int, int] = (1, 3)
+    n_agents: int = 500
+    # Number of trips each agent attempts during the horizon. Higher upper
+    # bound = more between-trip battery drain = more charging demand.
+    trips_per_agent: Tuple[int, int] = (2, 4)
 
     # Battery model.
     battery_capacity_kwh: float = 50.0
     consumption_kwh_per_km: float = 0.18
-    initial_soc_range: Tuple[float, float] = (0.30, 0.90)
-    low_battery_threshold: float = 0.20  # SoC fraction at which agent seeks charger
-    target_soc: float = 0.80              # SoC fraction at which agent leaves charger
+    # Lower starting SoC distribution puts more agents close to the threshold,
+    # so realistic charging behaviour appears within the simulation horizon.
+    initial_soc_range: Tuple[float, float] = (0.20, 0.55)
+    low_battery_threshold: float = 0.30  # SoC fraction at which agent seeks charger
+    target_soc: float = 0.70              # SoC fraction at which agent leaves charger
 
-    # Charging.
-    charger_power_kw: float = 22.0
+    # Charging. 50 kW corresponds to typical DC fast chargers in central
+    # Warsaw; lower values (e.g. 22 kW AC) make charging cycles longer than
+    # the horizon and starve the metrics.
+    charger_power_kw: float = 50.0
 
     # Departure-time distribution: bimodal (morning + afternoon peak), in minutes
     # since simulation start. Used by the synthetic demand generator.
-    morning_peak_min: int = 60       # 1 h after sim start
-    afternoon_peak_min: int = 240    # 4 h after sim start
-    peak_std_min: int = 45
+    morning_peak_min: int = 120      # 2 h after sim start
+    afternoon_peak_min: int = 540    # 9 h after sim start
+    peak_std_min: int = 60
 
     # Decision model.
     max_seek_radius_nodes: int = 5000  # bound on reachable-station search
@@ -148,7 +154,9 @@ SIM = SimulationParams()
 
 @dataclass(frozen=True)
 class ScenarioParams:
-    clustered_radius_m: float = 600.0   # cluster sites within this radius of centre
+    # Tighter cluster radius produces clearer detour and queue differentiation
+    # vs. the distributed grid scenario.
+    clustered_radius_m: float = 400.0
     # In the distributed layout we lay sites on an N×N grid clipped to the polygon.
     distributed_grid_size: int = 5
 

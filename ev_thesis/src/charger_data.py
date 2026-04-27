@@ -69,12 +69,18 @@ def fetch_chargers_openchargemap(
         "key": api_key,
     }
     headers = {"X-API-Key": api_key, "User-Agent": "ev-thesis-sgh/1.0"}
+    print(
+        f"[charger_data] querying Open Charge Map: "
+        f"lat={lat}, lon={lon}, radius={radius_km} km, max={max_results}"
+    )
     resp = requests.get(
         config.OCM_API_URL, params=params, headers=headers, timeout=timeout
     )
     resp.raise_for_status()
     payload = resp.json()
-    return _ocm_payload_to_df(payload)
+    df = _ocm_payload_to_df(payload)
+    print(f"[charger_data] OCM returned {len(df)} raw POIs.")
+    return df
 
 
 def _ocm_payload_to_df(payload) -> pd.DataFrame:
@@ -169,53 +175,101 @@ def clean_chargers(
 ) -> pd.DataFrame:
     """Clean, impute, and snap chargers to the graph.
 
-    Steps:
-    - drop rows without lat/lon;
-    - fill missing names with "(unnamed)";
-    - impute missing port counts with `default_ports` and flag them;
-    - snap each charger to the nearest graph node via OSMnx;
-    - drop rows whose snap distance exceeds `max_snap_distance_m` (these are
-      effectively outside the study area).
+    Steps (each step prints a diagnostic so the thesis can show the funnel):
+    1. drop rows without lat/lon;
+    2. fill missing names / operators;
+    3. impute missing port counts with `default_ports` and flag them;
+    4. snap each charger to the nearest graph node;
+    5. drop rows whose snap distance exceeds `max_snap_distance_m`
+       (effectively outside the study area);
+    6. aggregate chargers that snap to the same graph node.
     """
+    n_raw = len(df)
+    print(f"[charger_data] cleaning funnel — raw rows: {n_raw}")
     if df.empty:
+        print("[charger_data] empty input; nothing to clean.")
         return _empty_clean()
 
     df = df.copy()
+
+    # 1. drop rows without lat/lon
+    n_before = len(df)
     df = df.dropna(subset=["latitude", "longitude"]).reset_index(drop=True)
+    n_no_coords = n_before - len(df)
+    if n_no_coords:
+        print(
+            f"[charger_data]   - dropped {n_no_coords} rows missing lat/lon"
+        )
     if df.empty:
+        print("[charger_data] no rows with valid coordinates; aborting.")
         return _empty_clean()
 
+    # 2. fill text columns
     df["name"] = df["name"].fillna("(unnamed)")
     df["operator"] = df["operator"].fillna("(unknown)")
 
+    # 3. impute missing/zero port counts
     df["ports_imputed"] = df["number_of_points"].isna() | (
         pd.to_numeric(df["number_of_points"], errors="coerce") <= 0
     )
+    n_imputed = int(df["ports_imputed"].sum())
     df["number_of_points"] = pd.to_numeric(
         df["number_of_points"], errors="coerce"
     ).fillna(default_ports).astype(int)
     df.loc[df["number_of_points"] <= 0, "number_of_points"] = default_ports
+    if n_imputed:
+        print(
+            f"[charger_data]   - imputed port count for {n_imputed} rows "
+            f"(default = {default_ports}, flagged via ports_imputed=True)"
+        )
 
-    # Snap.
+    n_after_clean = len(df)
+    print(f"[charger_data]   after cleaning: {n_after_clean} rows")
+
+    # 4. snap to graph nodes
     nodes, dists = snap_points_to_nodes(
         G, df["latitude"].tolist(), df["longitude"].tolist()
     )
     df["node"] = nodes
     df["snap_distance_m"] = dists
+    n_snapped = len(df)
+    if n_snapped:
+        median_snap = float(pd.Series(dists).median())
+        max_snap = float(pd.Series(dists).max())
+        print(
+            f"[charger_data]   snapped: {n_snapped} rows  "
+            f"(median snap distance = {median_snap:.1f} m, "
+            f"max = {max_snap:.1f} m)"
+        )
 
-    # Filter out points that snapped too far (outside study area).
+    # 5. boundary filter
     keep = df["snap_distance_m"] <= max_snap_distance_m
     n_dropped = int((~keep).sum())
     if n_dropped:
         print(
-            f"[charger_data] dropped {n_dropped} chargers whose snap distance "
-            f"exceeded {max_snap_distance_m:.0f} m (outside polygon)."
+            f"[charger_data]   - dropped {n_dropped} rows whose snap distance "
+            f"> {max_snap_distance_m:.0f} m (outside graph boundary)"
         )
     df = df[keep].reset_index(drop=True)
+    n_after_filter = len(df)
+    print(
+        f"[charger_data]   after graph-boundary filter: {n_after_filter} rows"
+    )
 
-    # If multiple chargers snap to the same node, aggregate their ports.
+    # 6. aggregate by node
     df = _aggregate_by_node(df)
+    n_after_agg = len(df)
+    if n_after_agg < n_after_filter:
+        print(
+            f"[charger_data]   - merged {n_after_filter - n_after_agg} "
+            f"duplicate-node rows by summing ports"
+        )
 
+    total_ports = int(df["number_of_points"].sum()) if not df.empty else 0
+    print(
+        f"[charger_data] FINAL: {n_after_agg} stations, "
+        f"{total_ports} total ports."
+    )
     return df
 
 

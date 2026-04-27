@@ -27,12 +27,42 @@ for _d in (RAW_DIR, PROCESSED_DIR, FIGURES_DIR, TABLES_DIR):
 # ---------------------------------------------------------------------------
 # Study area
 # ---------------------------------------------------------------------------
+#
+# The thesis focuses *conceptually* on Śródmieście, but the technical
+# study-area can be widened so that there are enough chargers and origins for
+# meaningful scenario comparison. Choose one of:
+#
+#   "srodmiescie"     — Śródmieście only (smallest graph, fastest)
+#   "central_warsaw"  — central districts of Warsaw (default for the thesis)
+#   "warsaw_full"     — entire Warsaw municipality (largest, slowest)
+#
+# `USE_CUSTOM_BBOX` overrides the place-based query and uses
+# `CUSTOM_BBOX = (north, south, east, west)` instead. It is False by default.
 
-STUDY_AREA_PLACE: str = "Śródmieście, Warszawa, Polska"
-# Centroid of Śródmieście — used for OCM radius queries and clustered layout.
-WARSAW_CENTER_LAT: float = 52.2330
-WARSAW_CENTER_LON: float = 21.0173
-OCM_QUERY_RADIUS_KM: float = 4.0
+STUDY_AREA_MODE: str = "central_warsaw"
+PLACE_NAME: str = "Warsaw, Poland"
+
+# Districts that together form "central Warsaw" for the thesis.
+CENTRAL_WARSAW_DISTRICTS: tuple = (
+    "Śródmieście, Warszawa, Polska",
+    "Wola, Warszawa, Polska",
+    "Ochota, Warszawa, Polska",
+    "Mokotów, Warszawa, Polska",
+    "Praga-Północ, Warszawa, Polska",
+)
+
+USE_CUSTOM_BBOX: bool = False
+# (north_lat, south_lat, east_lon, west_lon)
+CUSTOM_BBOX: tuple = (52.30, 52.18, 21.10, 20.93)
+
+# Backward-compat alias used by older code paths.
+STUDY_AREA_PLACE: str = CENTRAL_WARSAW_DISTRICTS[0]
+
+# Centroid of central Warsaw — used for OCM radius queries and clustered
+# layout. Coordinates correspond to roughly Plac Defilad / Centrum.
+WARSAW_CENTER_LAT: float = 52.2297
+WARSAW_CENTER_LON: float = 21.0122
+OCM_QUERY_RADIUS_KM: float = 10.0
 
 
 # ---------------------------------------------------------------------------
@@ -44,11 +74,18 @@ OCM_COUNTRY_CODE: str = "PL"
 OCM_MAX_RESULTS: int = 500
 OCM_API_KEY_ENV: str = "OPENCHARGEMAP_API_KEY"
 MANUAL_CHARGER_CSV: Path = RAW_DIR / "chargers_manual.csv"
-RAW_CHARGER_CSV: Path = RAW_DIR / "chargers_openchargemap_warsaw.csv"
+# Wider central-Warsaw inventory used by the thesis. The "_wide" suffix is
+# kept in the filename so older notebooks that referenced the previous file
+# do not silently overwrite it.
+RAW_CHARGER_CSV: Path = RAW_DIR / "chargers_openchargemap_warsaw_wide.csv"
 PROCESSED_CHARGER_CSV: Path = PROCESSED_DIR / "chargers_clean.csv"
 
 DEFAULT_PORTS_WHEN_MISSING: int = 2
-MAX_SNAP_DISTANCE_M: float = 150.0
+# Snap-distance threshold for accepting a charger as inside the road graph.
+# Wider than the original 150 m because the wider study area includes
+# arterial roads where chargers may sit on a parking parcel slightly
+# offset from the nearest drivable node.
+MAX_SNAP_DISTANCE_M: float = 250.0
 
 
 # ---------------------------------------------------------------------------
@@ -122,6 +159,30 @@ SCENARIO = ScenarioParams()
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def study_area_query():
+    """Return the OSMnx query for the configured study area.
+
+    The return type matches what `osmnx.graph_from_place` expects:
+    - a single place string for "srodmiescie" / "warsaw_full" modes;
+    - a list of place strings for the "central_warsaw" multi-district mode.
+
+    For bbox mode (`USE_CUSTOM_BBOX=True`) this returns the bbox tuple, and
+    callers should branch to `osmnx.graph_from_bbox` instead.
+    """
+    if USE_CUSTOM_BBOX:
+        return CUSTOM_BBOX
+    if STUDY_AREA_MODE == "srodmiescie":
+        return STUDY_AREA_PLACE
+    if STUDY_AREA_MODE == "central_warsaw":
+        return list(CENTRAL_WARSAW_DISTRICTS)
+    if STUDY_AREA_MODE == "warsaw_full":
+        return PLACE_NAME
+    raise ValueError(
+        f"Unknown STUDY_AREA_MODE={STUDY_AREA_MODE!r}; "
+        "expected 'srodmiescie', 'central_warsaw', or 'warsaw_full'."
+    )
+
 
 def get_ocm_api_key() -> str | None:
     """Return the OCM API key from the environment, or None if unset."""

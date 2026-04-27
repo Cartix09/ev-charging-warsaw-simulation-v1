@@ -26,8 +26,15 @@ from . import config
 # Build / load
 # ---------------------------------------------------------------------------
 
-def download_graph(place: str = config.STUDY_AREA_PLACE) -> nx.MultiDiGraph:
+def download_graph(query=None) -> nx.MultiDiGraph:
     """Download the drivable network and return a cleaned MultiDiGraph.
+
+    `query` may be:
+    - None (default) → use `config.study_area_query()` based on STUDY_AREA_MODE;
+    - a place string (e.g. "Warsaw, Poland");
+    - a list of place strings (multi-district union);
+    - a (north, south, east, west) bbox tuple, in which case
+      `osmnx.graph_from_bbox` is used.
 
     Cleaning:
     - directed (one-way preserved by `network_type='drive'`);
@@ -35,8 +42,39 @@ def download_graph(place: str = config.STUDY_AREA_PLACE) -> nx.MultiDiGraph:
     - edge `length` (m) from OSMnx default;
     - edge `travel_time_min` derived from `maxspeed` (OSMnx fills defaults).
     """
-    G = ox.graph_from_place(place, network_type=config.NETWORK_TYPE, simplify=True)
-    return _post_process(G)
+    if query is None:
+        query = config.study_area_query()
+
+    if isinstance(query, tuple) and len(query) == 4 and all(
+        isinstance(v, (int, float)) for v in query
+    ):
+        north, south, east, west = query
+        print(
+            f"[graph_utils] downloading drivable graph for bbox "
+            f"N={north} S={south} E={east} W={west}"
+        )
+        G = ox.graph_from_bbox(
+            north=north,
+            south=south,
+            east=east,
+            west=west,
+            network_type=config.NETWORK_TYPE,
+            simplify=True,
+        )
+    else:
+        descr = query if isinstance(query, str) else f"{len(query)} places"
+        print(f"[graph_utils] downloading drivable graph for: {descr}")
+        G = ox.graph_from_place(
+            query, network_type=config.NETWORK_TYPE, simplify=True
+        )
+
+    G = _post_process(G)
+    print(
+        f"[graph_utils] graph after post-processing: "
+        f"{G.number_of_nodes():,} nodes, {G.number_of_edges():,} edges "
+        f"(largest strongly connected component)"
+    )
+    return G
 
 
 def _post_process(G: nx.MultiDiGraph) -> nx.MultiDiGraph:

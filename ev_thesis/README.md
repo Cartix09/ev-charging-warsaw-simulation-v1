@@ -71,7 +71,7 @@ Then run the notebooks in order: `01_download_data.ipynb` →
 
 The default loader queries Open Charge Map. To get a key:
 
-1. Register at https://openchargemap.org/site/develop/api
+1. Register at https://openchargemap.org/profile/applications
 2. Copy your API key
 3. `export OPENCHARGEMAP_API_KEY=...`
 

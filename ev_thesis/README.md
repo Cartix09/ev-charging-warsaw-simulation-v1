@@ -98,9 +98,37 @@ station capacity, so differences in metrics are attributable to layout only.
 - `outputs/tables/scenario_summary.csv`
 - `outputs/tables/agent_results.csv`
 - `outputs/tables/station_results.csv`
+- `outputs/tables/professor_summary.csv`  (compact decision-support table with the objective score and rank)
 - `outputs/figures/queue_over_time.png`
 - `outputs/figures/scenario_comparison_waiting_time.png`
 - `outputs/figures/station_utilisation.png`
+- `outputs/figures/professor_queue_over_time.png`        (Figure 1 — preliminary results)
+- `outputs/figures/professor_objective_components.png`   (Figure 2 — preliminary results)
+- `outputs/figures/professor_waiters_only.png`           (Figure 3 — preliminary results, optional)
+
+## Objective and preliminary outputs
+
+From the perspective of a city government, the planning problem is **where to allocate scarce public charging capacity in central Warsaw**. The simulation does not solve a closed-form optimisation. Instead it estimates, for any candidate station layout, four signals that a planner would minimise:
+
+```
+J = α·W + β·D + γ·Q + δ·Uimb
+```
+
+| symbol | meaning                                                                  | source metric                              |
+|--------|--------------------------------------------------------------------------|--------------------------------------------|
+| W      | waiting pressure on affected drivers                                     | `mean_waiting_time_among_waiters_min`      |
+| D      | induced detour distance                                                  | `mean_detour_distance_m`                   |
+| Q      | cumulative queue pressure                                                | `total_queue_minutes`                      |
+| Uimb   | utilisation imbalance across stations                                    | `utilisation_imbalance_sd` (std-dev of util)|
+
+Each component is min-max normalised across the scenarios in a single run, so the composite J ∈ [0, 1] and **lower = better**. Default weights are equal (α = β = γ = δ = 0.25); they can be changed in `src/config.py → ObjectiveWeights`. The thesis reports the four raw components separately. **J is a decision-support summary, not a claim of true social welfare.**
+
+Two thesis-ready figures answer the supervisor's "what does this say?" question:
+
+1. `outputs/figures/professor_queue_over_time.png` — total queue length over time, one line per scenario. Reads directly off the queue-pressure component (Q).
+2. `outputs/figures/professor_objective_components.png` — all four normalised components grouped per scenario, with the composite J and the rank.
+
+Preliminary finding (with current parameters): the **distributed** layout dominates on Q, W and D; the **clustered** layout is worst on Q and D; the **real** layout sits in between. Rerun `notebooks/03_run_scenarios.ipynb` to refresh.
 
 ## Modelling assumptions (short)
 

@@ -278,6 +278,240 @@ def plot_charging_events_bar(
 
 
 # ---------------------------------------------------------------------------
+# Objective score (decision-support summary)
+# ---------------------------------------------------------------------------
+
+OBJECTIVE_COMPONENTS = {
+    # human label                  scenario_summary key
+    "W (waiting pressure)":        "mean_waiting_time_among_waiters_min",
+    "D (detour distance)":         "mean_detour_distance_m",
+    "Q (queue pressure)":          "total_queue_minutes",
+    "Uimb (util. imbalance)":      "utilisation_imbalance_sd",
+}
+
+
+def compute_objective_scores(
+    results: Iterable[SimulationResult],
+    weights: config.ObjectiveWeights = config.OBJECTIVE_WEIGHTS,
+) -> pd.DataFrame:
+    """Compute the normalised objective score per scenario.
+
+        J_norm = α·W_norm + β·D_norm + γ·Q_norm + δ·Uimb_norm
+
+    Each component is min-max normalised across the scenarios in `results`.
+    Lower score = better. Returns a DataFrame with raw + normalised
+    components, the score, and a rank (1 = best).
+    """
+    rows = []
+    for r in results:
+        s = r.summary or {}
+        rows.append(
+            {
+                "scenario": r.scenario,
+                "W_raw": float(s.get(OBJECTIVE_COMPONENTS["W (waiting pressure)"], 0.0)),
+                "D_raw": float(s.get(OBJECTIVE_COMPONENTS["D (detour distance)"], 0.0)),
+                "Q_raw": float(s.get(OBJECTIVE_COMPONENTS["Q (queue pressure)"], 0.0)),
+                "Uimb_raw": float(s.get(OBJECTIVE_COMPONENTS["Uimb (util. imbalance)"], 0.0)),
+            }
+        )
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+
+    for raw_col in ["W_raw", "D_raw", "Q_raw", "Uimb_raw"]:
+        norm_col = raw_col.replace("_raw", "_norm")
+        lo, hi = df[raw_col].min(), df[raw_col].max()
+        df[norm_col] = (df[raw_col] - lo) / (hi - lo) if hi > lo else 0.0
+
+    df["objective_score_equal_weights"] = (
+        weights.alpha * df["W_norm"]
+        + weights.beta * df["D_norm"]
+        + weights.gamma * df["Q_norm"]
+        + weights.delta * df["Uimb_norm"]
+    )
+    df["rank"] = (
+        df["objective_score_equal_weights"]
+        .rank(method="min", ascending=True)
+        .astype(int)
+    )
+    return df
+
+
+def write_professor_summary(
+    results: List[SimulationResult],
+    tables_dir: Path = config.TABLES_DIR,
+    weights: config.ObjectiveWeights = config.OBJECTIVE_WEIGHTS,
+) -> Path:
+    """Write the compact, decision-support 'professor' summary table.
+
+    Columns include the headline metrics plus the objective score and rank.
+    """
+    tables_dir.mkdir(parents=True, exist_ok=True)
+    obj = compute_objective_scores(results, weights=weights)
+
+    rows = []
+    for r in results:
+        s = r.summary or {}
+        rows.append(
+            {
+                "scenario": r.scenario,
+                "completed_trips": s.get("completed_trips", 0),
+                "started_charging_events": s.get("started_charging_events", 0),
+                "completed_charging_events": s.get("completed_charging_events", 0),
+                "pct_waited_at_least_once": s.get("pct_waited_at_least_once", 0.0),
+                "mean_waiting_time_among_waiters_min": s.get(
+                    "mean_waiting_time_among_waiters_min", 0.0
+                ),
+                "p95_waiting_time_min": s.get("p95_waiting_time_min", 0.0),
+                "mean_detour_distance_m": s.get("mean_detour_distance_m", 0.0),
+                "total_queue_minutes": s.get("total_queue_minutes", 0),
+                "max_queue_length": s.get("max_queue_length", 0),
+                "mean_station_utilisation": s.get("mean_station_utilisation", 0.0),
+                "utilisation_imbalance_sd": s.get("utilisation_imbalance_sd", 0.0),
+            }
+        )
+    df = pd.DataFrame(rows)
+    df = df.merge(
+        obj[["scenario", "objective_score_equal_weights", "rank"]],
+        on="scenario",
+        how="left",
+    )
+    df = df.sort_values("rank").reset_index(drop=True)
+    path = tables_dir / "professor_summary.csv"
+    df.to_csv(path, index=False)
+    return path
+
+
+# ---------------------------------------------------------------------------
+# Professor-facing figures
+# ---------------------------------------------------------------------------
+
+def plot_professor_queue_over_time(
+    results: Iterable[SimulationResult],
+    figure_path: Path = config.FIGURES_DIR / "professor_queue_over_time.png",
+) -> Path:
+    """Clean total-queue-length-over-time line chart, one line per scenario.
+
+    Same source data as `plot_queue_over_time`, formatted for the thesis
+    front-matter: thicker lines, named scenarios in the legend, time
+    axis in hours.
+    """
+    figure_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    palette = {"S1_real": "#1f77b4", "S2_clustered": "#d62728", "S3_distributed": "#2ca02c"}
+
+    for r in results:
+        if r.queue_timeseries.empty:
+            continue
+        total = r.queue_timeseries.sum(axis=1)
+        hours = total.index / 60.0
+        ax.plot(
+            hours, total.values,
+            label=r.scenario,
+            linewidth=2.0,
+            color=palette.get(r.scenario),
+        )
+    ax.set_xlabel("simulation time (hours)")
+    ax.set_ylabel("total queued vehicles (sum over stations)")
+    ax.set_title("Queue pressure over time, by station-layout scenario")
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="upper left")
+    fig.tight_layout()
+    fig.savefig(figure_path, dpi=150)
+    plt.close(fig)
+    return figure_path
+
+
+def plot_professor_objective_components(
+    results: Iterable[SimulationResult],
+    figure_path: Path = config.FIGURES_DIR / "professor_objective_components.png",
+    weights: config.ObjectiveWeights = config.OBJECTIVE_WEIGHTS,
+) -> Path:
+    """Grouped bar chart of the four normalised objective components.
+
+    For each component (W, D, Q, Uimb) we show one bar per scenario, in
+    [0, 1] after min-max normalisation. Below the bars we annotate the
+    composite J = αW + βD + γQ + δUimb (lower = better) and the rank.
+    """
+    figure_path.parent.mkdir(parents=True, exist_ok=True)
+    results = list(results)
+    obj = compute_objective_scores(results, weights=weights)
+    if obj.empty:
+        # Empty placeholder
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.text(0.5, 0.5, "no scenarios", ha="center", va="center", transform=ax.transAxes)
+        fig.savefig(figure_path, dpi=150)
+        plt.close(fig)
+        return figure_path
+
+    components = ["W_norm", "D_norm", "Q_norm", "Uimb_norm"]
+    component_labels = ["W\n(waiting)", "D\n(detour)", "Q\n(queue)", "Uimb\n(util. imbalance)"]
+    scenarios = obj["scenario"].tolist()
+    palette = {"S1_real": "#1f77b4", "S2_clustered": "#d62728", "S3_distributed": "#2ca02c"}
+
+    x = np.arange(len(components))
+    width = 0.8 / max(len(scenarios), 1)
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+    for i, sc in enumerate(scenarios):
+        vals = obj.loc[obj["scenario"] == sc, components].values.flatten()
+        offset = (i - (len(scenarios) - 1) / 2.0) * width
+        score = float(obj.loc[obj["scenario"] == sc, "objective_score_equal_weights"].iloc[0])
+        rank = int(obj.loc[obj["scenario"] == sc, "rank"].iloc[0])
+        ax.bar(
+            x + offset, vals, width,
+            label=f"{sc}  (J = {score:.2f}, rank {rank})",
+            color=palette.get(sc),
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(component_labels)
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel("normalised component value (0 = best, 1 = worst)")
+    ax.set_title(
+        "Objective components by scenario\n"
+        f"J = {weights.alpha:.2f}·W + {weights.beta:.2f}·D + "
+        f"{weights.gamma:.2f}·Q + {weights.delta:.2f}·Uimb   (lower = better)"
+    )
+    ax.grid(True, axis="y", alpha=0.3)
+    ax.legend(loc="upper right")
+    fig.tight_layout()
+    fig.savefig(figure_path, dpi=150)
+    plt.close(fig)
+    return figure_path
+
+
+def plot_professor_waiters_only(
+    results: Iterable[SimulationResult],
+    figure_path: Path = config.FIGURES_DIR / "professor_waiters_only.png",
+) -> Path:
+    """Boxplot of waiting time among agents who actually waited."""
+    figure_path.parent.mkdir(parents=True, exist_ok=True)
+    data, labels = [], []
+    for r in results:
+        if r.agents_df.empty:
+            continue
+        waited = r.agents_df.loc[
+            r.agents_df["waiting_time_min"] > 0, "waiting_time_min"
+        ]
+        data.append(waited.values)
+        labels.append(f"{r.scenario}\n(n={len(waited)})")
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    if any(len(d) > 0 for d in data):
+        ax.boxplot(data, labels=labels, showmeans=True)
+    else:
+        ax.text(0.5, 0.5, "no agents waited", ha="center", va="center", transform=ax.transAxes)
+    ax.set_ylabel("waiting time (minutes)")
+    ax.set_title("Waiting time among agents who actually waited")
+    ax.grid(True, axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(figure_path, dpi=150)
+    plt.close(fig)
+    return figure_path
+
+
+# ---------------------------------------------------------------------------
 # Convenience
 # ---------------------------------------------------------------------------
 
@@ -291,4 +525,10 @@ def write_all_outputs(results: List[SimulationResult]) -> Dict[str, Path]:
     paths["utilisation_histogram"] = plot_utilisation_histogram(results)
     paths["detour_distribution"] = plot_detour_distribution(results)
     paths["charging_events_by_scenario"] = plot_charging_events_bar(results)
+
+    # Decision-support / professor-facing outputs.
+    paths["professor_summary"] = write_professor_summary(results)
+    paths["professor_queue_over_time"] = plot_professor_queue_over_time(results)
+    paths["professor_objective_components"] = plot_professor_objective_components(results)
+    paths["professor_waiters_only"] = plot_professor_waiters_only(results)
     return paths

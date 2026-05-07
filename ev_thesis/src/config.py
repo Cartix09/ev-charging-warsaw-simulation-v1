@@ -165,6 +165,40 @@ SCENARIO = ScenarioParams()
 
 
 # ---------------------------------------------------------------------------
+# Objective function (decision-support score)
+# ---------------------------------------------------------------------------
+#
+# The thesis frames the planning problem as minimising a *weighted, normalised*
+# combination of four signals that the simulation produces directly:
+#
+#   J_norm = α·W_norm + β·D_norm + γ·Q_norm + δ·Uimb_norm
+#
+#   W    — waiting pressure         (default: mean waiting time among waiters)
+#   D    — detour distance          (default: mean per-agent detour, metres)
+#   Q    — queue pressure           (default: total queue-minutes)
+#   Uimb — utilisation imbalance    (default: standard deviation of station util.)
+#
+# Each component is min-max normalised across the scenarios in a single run,
+# so values are comparable. Lower J = better. The thesis still reports the
+# four raw components separately. J is a *summary* number, not a claim of
+# true social welfare.
+
+@dataclass(frozen=True)
+class ObjectiveWeights:
+    alpha: float = 0.25  # waiting pressure (W)
+    beta: float = 0.25   # detour distance (D)
+    gamma: float = 0.25  # queue pressure (Q)
+    delta: float = 0.25  # utilisation imbalance (Uimb)
+
+    def as_dict(self) -> dict:
+        return {"alpha": self.alpha, "beta": self.beta,
+                "gamma": self.gamma, "delta": self.delta}
+
+
+OBJECTIVE_WEIGHTS = ObjectiveWeights()
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

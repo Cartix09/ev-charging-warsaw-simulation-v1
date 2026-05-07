@@ -210,6 +210,16 @@ class Simulator:
         waited_at_least_once = wait > 0
         wait_among_waiters = wait[waited_at_least_once]
 
+        # Utilisation imbalance.
+        if not stations_df.empty:
+            util = stations_df["utilisation"]
+            util_sd = float(util.std(ddof=0))
+            util_mean = float(util.mean())
+            util_cv = (util_sd / util_mean) if util_mean > 0 else 0.0
+            util_range = float(util.max() - util.min())
+        else:
+            util_sd = util_cv = util_range = 0.0
+
         return {
             "scenario": self.scenario_name,
             "n_agents": n,
@@ -238,6 +248,9 @@ class Simulator:
                 if not stations_df.empty
                 else 0.0
             ),
+            "utilisation_imbalance_sd": util_sd,
+            "utilisation_imbalance_cv": util_cv,
+            "utilisation_imbalance_range": util_range,
             "total_queue_minutes": (
                 int(stations_df["total_queue_minutes"].sum())
                 if not stations_df.empty

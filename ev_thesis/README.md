@@ -123,7 +123,7 @@ J = α·W + β·D + γ·Q + δ·Uimb
 
 Each component is min-max normalised across the scenarios in a single run, so the composite J ∈ [0, 1] and **lower = better**. Default weights are equal (α = β = γ = δ = 0.25); they can be changed in `src/config.py → ObjectiveWeights`. The thesis reports the four raw components separately. **J is a decision-support summary, not a claim of true social welfare.**
 
-Two thesis-ready figures answer the supervisor's "what does this say?" question:
+Two key preliminary figures summarise the simulation output:
 
 1. `outputs/figures/professor_queue_over_time.png` — total queue length over time, one line per scenario. Reads directly off the queue-pressure component (Q).
 2. `outputs/figures/professor_objective_components.png` — all four normalised components grouped per scenario, with the composite J and the rank.

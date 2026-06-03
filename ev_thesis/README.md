@@ -130,6 +130,40 @@ Two key preliminary figures summarise the simulation output:
 
 Preliminary finding (with current parameters): the **distributed** layout dominates on Q, W and D; the **clustered** layout is worst on Q and D; the **real** layout sits in between. Rerun `notebooks/03_run_scenarios.ipynb` to refresh.
 
+## Two-objective optimisation layer
+
+A separate, optional layer (`src/optimisation.py`, `notebooks/05_pareto_optimisation.ipynb`) restates the planning problem as a **two-objective minimisation** suitable for a Pareto-frontier figure:
+
+- $G = (V(G), E(G))$ — the directed road graph (largest strongly connected component).
+- $x \subset V(G) \times \mathbb{N}^+$ — a candidate layout = a finite set of `(node, ports)` pairs.
+- $K(x) = |x|$ — number of stations.
+- $P(x) = \sum_{(n,p) \in x} p$ — total ports.
+
+$$\text{minimise } C(x) = c_{\text{station}}\,K(x) + c_{\text{port}}\,P(x)\quad\text{(infrastructure cost)}$$
+
+$$\text{minimise } L(x) = w_1\,\hat{L}_{\text{wait}} + w_2\,\hat{L}_{\text{detour}} + w_3\,\hat{L}_{95}\quad\text{(service loss)}$$
+
+with $L$ aggregated from the ABM summary (mean wait among waiters, mean detour, p95 wait) and each component min-max-normalised across the candidate set.
+
+For each $\alpha \in \{0.0, 0.1, \ldots, 1.0\}$ the layer also solves
+
+$$\arg\min_x\;J_\alpha(x) = \alpha\,\hat{C}(x) + (1-\alpha)\,\hat{L}(x)$$
+
+with $\hat{C}, \hat{L}$ normalised across the candidate set.
+
+**Evaluation function.** The agent-based simulation is the evaluation function: for every candidate $x$, the ABM runs once with the same agent population, seed, and horizon, and the resulting summary feeds $L(x)$.
+
+**Search method.** Structured candidate search over $(K, P, \text{pattern})$ — *not* a genetic algorithm. The structured grid spans the cost / quality space coarsely; a GA could be substituted as the search driver without changing the Pareto or α-sweep machinery. This is documented honestly in `src/optimisation.py` to address the natural reviewer question.
+
+**Outputs**:
+- `outputs/tables/pareto_candidates.csv`
+- `outputs/tables/pareto_frontier.csv`
+- `outputs/tables/alpha_solutions.csv`
+- `outputs/figures/pareto_frontier_cost_quality.png`
+- `outputs/figures/alpha_tradeoff_solutions.png`
+
+The three-scenario analysis (S1_real / S2_clustered / S3_distributed) in notebooks 03–04 remains unchanged — it is the preliminary scenario analysis. The optimisation layer is an *additional* search-and-trade-off layer on top of it.
+
 ## Modelling assumptions (short)
 
 Free-flow edge travel times, linear battery consumption, constant-power
